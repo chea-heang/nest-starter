@@ -85,4 +85,6 @@ export class AuthController {
   updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.sub, dto);
   }
+  
 }
+ 

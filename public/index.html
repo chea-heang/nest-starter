@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fullstack Blog App — Frontend & Backend Connected</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kantumruy Pro', sans-serif; }
+    body { background-color: #f1f5f9; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #0f172a; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .logo { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .badge-status { font-size: 0.75rem; padding: 4px 10px; border-radius: 9999px; font-weight: 600; }
+    .badge-online { background: #10b981; color: white; }
+    .badge-offline { background: #ef4444; color: white; }
+
+    main { max-width: 1000px; width: 100%; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; flex: 1; }
+    @media (max-width: 768px) { main { grid-template-columns: 1fr; } }
+
+    .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 6px; }
+
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem; }
+    input, textarea { width: 100%; padding: 0.65rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; transition: border-color 0.2s; }
+    input:focus, textarea:focus { outline: none; border-color: #3b82f6; ring: 2px solid #93c5fd; }
+
+    button { background: #2563eb; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; }
+    button:hover { background: #1d4ed8; }
+    button:active { transform: scale(0.98); }
+    .btn-secondary { background: #64748b; margin-top: 0.5rem; }
+    .btn-secondary:hover { background: #475569; }
+
+    .user-profile { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .user-profile h3 { font-size: 1rem; color: #0f172a; }
+    .user-profile p { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+
+    .post-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .post-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .post-card h3 { font-size: 1.1rem; color: #1e293b; margin-bottom: 0.5rem; }
+    .post-card p { font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 0.75rem; }
+    .post-meta { font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; }
+
+    .quick-account { background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; cursor: pointer; margin-bottom: 0.75rem; display: block; color: #334155; }
+    .quick-account:hover { background: #e2e8f0; border-color: #94a3b8; }
+    .notification { padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; display: none; }
+    .notif-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .notif-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="logo">
+      <span>🚀</span> Fullstack NestJS + Frontend
+    </div>
+    <div id="status-badge" class="badge-status badge-online">
+      ● Backend Connected (:3000)
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main>
+    <!-- Left Column: User & Auth -->
+    <div>
+      <div id="auth-box" class="card">
+        <h2>🔑 ចូលគណនី (Login)</h2>
+        
+        <div id="notif-auth" class="notification"></div>
+
+        <span class="quick-account" onclick="fillAdmin()">
+          👉 ចុចទីនេះដើម្បីបំពេញ: <strong>admin@example.com</strong>
+        </span>
+
+        <form id="form-login" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>អ៊ីមែល (Email):</label>
+            <input type="email" id="email" value="admin@example.com" required>
+          </div>
+          <div class="form-group">
+            <label>ពាក្យសម្ងាត់ (Password):</label>
+            <input type="password" id="password" value="Admin@123" required>
+          </div>
+          <button type="submit">ចូលប្រើ (Login)</button>
+        </form>
+      </div>
+
+      <!-- Logged-in Profile Card -->
+      <div id="profile-box" class="card" style="display: none;">
+        <h2>👤 ព័ត៌មានគណនី</h2>
+        <div class="user-profile">
+          <h3 id="user-name">ឈ្មោះ: -</h3>
+          <p id="user-email">Email: -</p>
+          <p id="user-role">Role: -</p>
+        </div>
+        <button class="btn-secondary" onclick="handleLogout()">🚪 ចាកចេញ (Logout)</button>
+      </div>
+
+      <!-- Create Post Box -->
+      <div class="card">
+        <h2>✍️ បង្កើត Post ថ្មី</h2>
+        <div id="notif-post" class="notification"></div>
+        <form id="form-create-post" onsubmit="handleCreatePost(event)">
+          <div class="form-group">
+            <label>ចំណងជើង (Title):</label>
+            <input type="text" id="post-title" placeholder="ឧ. រៀន NestJS ភ្ជាប់ Frontend..." required>
+          </div>
+          <div class="form-group">
+            <label>ខ្លឹមសារ (Content):</label>
+            <textarea id="post-content" rows="4" placeholder="សរសេរខ្លឹមសារនៅទីនេះ..." required></textarea>
+          </div>
+          <button type="submit">📤 បង្ហោះ Post ទៅ Backend</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column: Blog Posts List -->
+    <div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="margin: 0; border: none; padding: 0;">📰 បញ្ជី Posts ពី Database</h2>
+          <button onclick="loadPosts()" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;">🔄 Refresh</button>
+        </div>
+        <div id="posts-list">
+          <p style="color: #64748b; text-align: center; padding: 2rem 0;">កំពុងទាញយកទិន្នន័យពី Backend...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // API Base URL - ដោយសារ Frontend និង Backend នៅលើ Host តែមួយ គឺប្រើ /api/v1 ផ្ទាល់តែម្តង
+    const API_URL = '/api/v1';
+
+    function showNotif(id, msg, isError = false) {
+      const box = document.getElementById(id);
+      box.textContent = msg;
+      box.className = `notification ${isError ? 'notif-error' : 'notif-success'}`;
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 4000);
+    }
+
+    function fillAdmin() {
+      document.getElementById('email').value = 'admin@example.com';
+      document.getElementById('password').value = 'Admin@123';
+    }
+
+    // 1. Login Function
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.data?.access_token) {
+          localStorage.setItem('access_token', data.data.access_token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          showNotif('notif-auth', '✅ ចូលប្រើប្រាស់បានជោគជ័យ!');
+          checkAuth();
+        } else {
+          showNotif('notif-auth', '❌ ' + (data.message || 'អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ'), true);
+        }
+      } catch (err) {
+        showNotif('notif-auth', '❌ មិនអាចភ្ជាប់ទៅកាន់ Backend បានទេ', true);
+      }
+    }
+
+    // 2. Check Auth State
+    function checkAuth() {
+      const token = localStorage.getItem('access_token');
+      const userStr = localStorage.getItem('user');
+
+      if (token && userStr) {
+        const user = JSON.parse(userStr);
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('profile-box').style.display = 'block';
+        document.getElementById('user-name').textContent = `ឈ្មោះ: ${user.name || 'Admin'}`;
+        document.getElementById('user-email').textContent = `Email: ${user.email}`;
+        document.getElementById('user-role').textContent = `Role: ${user.role || 'USER'}`;
+      } else {
+        document.getElementById('auth-box').style.display = 'block';
+        document.getElementById('profile-box').style.display = 'none';
+      }
+    }
+
+    // 3. Logout
+    function handleLogout() {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      checkAuth();
+      showNotif('notif-auth', 'បានចាកចេញពីប្រព័ន្ធ');
+    }
+
+    // 4. Load Posts from Backend (GET /posts)
+    async function loadPosts() {
+      const container = document.getElementById('posts-list');
+      try {
+        const res = await fetch(`${API_URL}/posts`);
+        const json = await res.json();
+        const posts = json.data?.posts || [];
+
+        if (posts.length === 0) {
+          container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">មិនទាន់មាន Post ក្នុង Database ទេ</p>';
+          return;
+        }
+
+        container.innerHTML = posts.map(post => `
+          <div class="post-card">
+            <h3>${post.title}</h3>
+            <p>${post.content || '(គ្មានខ្លឹមសារ)'}</p>
+            <div class="post-meta">
+              <span>👤 ដោយ: <strong>${post.author?.name || 'Admin'}</strong></span>
+              <span>📅 ${new Date(post.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">❌ បរាជ័យក្នុងការទាញទិន្នន័យពី Server</p>';
+      }
+    }
+
+    // 5. Create Post (POST /posts with Bearer Token)
+    async function handleCreatePost(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        showNotif('notif-post', '⚠️ សូម Login ជាមុនសិន ទើបអាចបង្កើត Post បាន!', true);
+        return;
+      }
+
+      const title = document.getElementById('post-title').value;
+      const content = document.getElementById('post-content').value;
+
+      try {
+        const res = await fetch(`${API_URL}/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Connecting Header ជាមួយ Bearer Token
+          },
+          body: JSON.stringify({ title, content, published: true })
+        });
+        const json = await res.json();
+
+        if (res.ok) {
+          showNotif('notif-post', '🎉 បានបង្កើត Post ដោយជោគជ័យ!');
+          document.getElementById('post-title').value = '';
+          document.getElementById('post-content').value = '';
+          loadPosts(); // Refresh Posts
+        } else {
+          showNotif('notif-post', '❌ ' + (json.message || 'បង្កើត Post មិនបានជោគជ័យ'), true);
+        }
+      } catch (err) {
+        showNotif('notif-post', '❌ មានបញ្ហាក្នុងការតភ្ជាប់', true);
+      }
+    }
+
+    // Initialize on page load
+    window.onload = function() {
+      checkAuth();
+      loadPosts();
+    };
+  </script>
+</body>
+</html>
+
