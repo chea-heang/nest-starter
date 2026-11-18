@@ -33,7 +33,10 @@ const config: Config = {
     'node_modules/(?!.*@nestjs)',
   ],
   modulePathIgnorePatterns: ['<rootDir>/.pnpm-store'],
-  moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
+  moduleNameMapper: {
+    ...pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
+    '.*/load-package\\.util\\.js$': '<rootDir>/test/load-package.util.cjs',
+  },
   collectCoverageFrom: [
     'src/**/*.(t|j)s',
     'libs/**/*.(t|j)s',
@@ -41,6 +44,7 @@ const config: Config = {
   ],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
+  forceExit: true,
 };
 
 export default config;
