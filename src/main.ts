@@ -3,12 +3,17 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
+import { ThrottlerExceptionFilter } from './common/guards/throttler-exception.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { WinstonModule } from 'nest-winston';
+import { winstonLogger } from './common/logger/winston.config';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: WinstonModule.createLogger({ instance: winstonLogger }),
+  });
 
   // Serve static Frontend files from public folder
   app.useStaticAssets(join(__dirname, '..', 'public'));
@@ -16,8 +21,11 @@ async function bootstrap() {
   // Global Prefix
   app.setGlobalPrefix('api/v1');
 
-  // Global Exception Filter
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // Global Exception Filters
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new ThrottlerExceptionFilter(),
+  );
 
   // Global Validation Pipe
   app.useGlobalPipes(

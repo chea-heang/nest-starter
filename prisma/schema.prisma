@@ -25,6 +25,7 @@ model User {
   refreshTokens RefreshToken[]
   posts         Post[]
   comments      Comment[]
+  chatMessages  ChatMessage[]
 
   @@map("users")
 }
@@ -90,4 +91,24 @@ model Comment {
   @@index([authorId])
   @@map("comments")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat Message
+// ─────────────────────────────────────────────────────────────────────────────
+model ChatMessage {
+  id        String   @id @default(cuid())
+  room      String   @default("lounge") // e.g. "lounge", "spiderman", "cambodia-cinemas"
+  content   String   @db.Text
+  senderId  String?  @map("sender_id")  // Optional if guest
+  guestName String?  @map("guest_name") // Used if guest
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  sender User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([room, createdAt])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
 

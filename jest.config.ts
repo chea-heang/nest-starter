@@ -15,8 +15,20 @@ const config: Config = {
   rootDir: '.',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.(t|j)s$': [
+      require.resolve('ts-jest'),
+      {
+        tsconfig: {
+          rootDir: '.',
+          module: 'commonjs',
+          moduleResolution: 'node',
+          resolvePackageJsonExports: false,
+          ignoreDeprecations: '6.0',
+        },
+      },
+    ],
   },
+  transformIgnorePatterns: ['/node_modules/'],
   moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   collectCoverageFrom: [
     'src/**/*.(t|j)s',

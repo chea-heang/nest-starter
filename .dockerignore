@@ -3,5 +3,6 @@ dist
 .next
 .git
 *.log
+logs
 .env*
 
