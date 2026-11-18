@@ -10,14 +10,14 @@ EXPOSE 3001
 
 # At startup:
 #  1. pnpm install  — installs Linux-native node_modules from the bind-mounted source
-#  2. prisma migrate deploy — run pending migrations
+#  2. prisma db push — synchronize MongoDB collections & indexes
 #  3. pnpm dev — start NestJS with hot-reload
 CMD ["sh", "-c", "\
   echo 'Installing dependencies...' && \
   pnpm install && \
-  echo 'Running Prisma migrations...' && \
-  npx prisma generate && \
-  npx prisma migrate deploy && \
+  echo 'Synchronizing MongoDB schema with Prisma...' && \
+  pnpm exec prisma generate && \
+  pnpm exec prisma db push && \
   echo 'Starting NestJS in watch mode on port 3001...' && \
   PORT=3001 pnpm run dev \
   "]

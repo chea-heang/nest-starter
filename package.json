@@ -5,6 +5,7 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "packageManager": "pnpm@12.21.0",
   "scripts": {
     "build": "nest build",
     "deploy": "nest deploy",
@@ -21,12 +22,14 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:features": "node test/features.e2e.mjs",
-    "prisma:generate": "npx prisma generate",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:migrate:prod": "npx prisma migrate deploy",
-    "prisma:studio": "npx prisma studio",
-    "prisma:reset": "npx prisma migrate reset",
-    "prisma:seed": "npx prisma db seed"
+    "preinstall": "npx only-allow pnpm",
+    "prisma:generate": "pnpm exec prisma generate",
+    "prisma:push": "pnpm exec prisma db push",
+    "prisma:migrate": "pnpm exec prisma db push",
+    "prisma:migrate:prod": "pnpm exec prisma db push",
+    "prisma:studio": "pnpm exec prisma studio",
+    "prisma:reset": "pnpm exec prisma db push --force-reset",
+    "prisma:seed": "pnpm exec prisma db seed"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.0.0",
@@ -47,11 +50,13 @@
     "cache-manager": "^6.4.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "es-toolkit": "^1.53.2",
     "nest-winston": "^1.10.2",
     "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "prisma": "^5.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
@@ -74,7 +79,6 @@
     "jest": "^29.7.0",
     "oxlint": "^1.58.0",
     "prettier": "^3.4.2",
-    "prisma": "^5.22.0",
     "socket.io-client": "^4.8.1",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
@@ -87,8 +91,21 @@
   "prisma": {
     "seed": "ts-node -P tsconfig.seed.json prisma/seed.ts"
   },
-  "overrides": {
-    "magic-string": "^0.30.17",
-    "ora": "^5.4.1"
+  "pnpm": {
+    "overrides": {
+      "magic-string": "^0.30.17",
+      "ora": "^5.4.1"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@nestjs/common",
+        "@nestjs/core",
+        "keyv"
+      ],
+      "allowedVersions": {
+        "@nestjs/common": "12.x",
+        "@nestjs/core": "12.x"
+      }
+    }
   }
 }

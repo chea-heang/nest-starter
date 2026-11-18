@@ -1,8 +1,14 @@
 node_modules
+.pnpm-store
 dist
 .next
 .git
 *.log
 logs
 .env*
-
+.docker-cache
+coverage
+.vscode
+.idea
+test
+*.tsbuildinfo

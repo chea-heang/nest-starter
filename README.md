@@ -57,6 +57,66 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## DevOps & Production Deployment
+
+This project includes production-ready Dockerization and an automated CI/CD pipeline using **GitHub Actions** and **GitHub Container Registry (GHCR)**.
+
+### 1. Docker Build & Run (Production)
+
+To build and run the production image locally or on a production host:
+
+```bash
+# Build multi-stage production image
+docker build -t ghcr.io/chea-heang/nest-starter:latest -f Dockerfile .
+
+# Run with production Docker Compose
+cp .env.production.example .env.production
+# Edit .env.production with your production secrets
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### 2. Automated Database Schema Synchronization & Migrations
+
+The production container includes `docker-entrypoint.sh`, which automatically detects your database provider in `prisma/schema.prisma` with built-in startup retry resilience:
+- **MongoDB (Default)**: Runs `./node_modules/.bin/prisma db push --skip-generate` (with automatic connection retries)
+- **PostgreSQL / Relational**: Runs `./node_modules/.bin/prisma migrate deploy` (with automatic connection retries)
+
+This runs before starting the Node process (`node dist/main.js`), ensuring schema synchronization is applied automatically during deployment rollouts. To skip this behavior, set `SKIP_MIGRATIONS=true` in `.env.production`.
+
+### 3. CI/CD with GitHub Actions
+
+Two automated workflows are provided under `.github/workflows/`:
+
+- **CI (`ci.yml`)**:
+  - Triggers on PRs to `main` and pushes to `develop` / feature branches.
+  - Automatically runs:
+    1. Oxlint code quality & linting checks
+    2. Prisma client generation
+    3. TypeScript compilation & NestJS build
+    4. Unit test suite
+    5. Production Docker multi-stage build validation
+- **CD (`deploy.yml`)**:
+  - Triggers on merge/push to `main` and release tags (`v*.*.*`).
+  - Automatically builds and pushes production images to **GHCR**:
+    - `ghcr.io/chea-heang/nest-starter:latest`
+    - `ghcr.io/chea-heang/nest-starter:sha-<commit>`
+    - `ghcr.io/chea-heang/nest-starter:<semver>`
+  - Executes zero-downtime rolling deployment to your production server via SSH (when secrets are configured) and validates container health.
+
+### 4. Required GitHub Secrets (for Remote Server Deploy)
+
+To enable automatic deployment to your VPS, add these secrets in your GitHub repository (**Settings > Secrets and variables > Actions**):
+
+| Secret Name | Description | Example |
+|---|---|---|
+| `SERVER_HOST` | Production server IP or domain | `192.0.2.1` or `api.yourdomain.com` |
+| `SERVER_USER` | SSH user | `deploy` or `root` |
+| `SERVER_SSH_KEY` | Private SSH key for server access | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `SERVER_PORT` | SSH port (optional, defaults to 22) | `22` |
+| `API_HEALTHCHECK_URL` | Post-deploy validation URL | `https://api.yourdomain.com/api/v1` |
+
+---
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
