@@ -1,8 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 /**
- * Root controller — health check endpoint
- * GET /api/v1
+ * Root controller — health check & basic utility endpoints
+ * GET  /api/v1
+ * POST /api/v1/upload
  */
 @Controller()
 export class AppController {
@@ -15,6 +26,7 @@ export class AppController {
       timestamp: new Date().toISOString(),
       routes: {
         health: 'GET    /api/v1',
+        upload: 'POST   /api/v1/upload',
         // Auth
         register:      'POST   /api/v1/auth/register',
         login:         'POST   /api/v1/auth/login',
@@ -41,4 +53,41 @@ export class AppController {
       },
     };
   }
+
+  /**
+   * Upload a file saved to public/uploads/
+   * POST /api/v1/upload
+   * Expects multipart/form-data with key 'file'
+   */
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './public/uploads',
+        filename: (req, file, callback) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file provided. Please attach a file with key "file".');
+    }
+
+    return {
+      message: 'File uploaded successfully!',
+      file: {
+        originalName: file.originalname,
+        savedAs: file.filename,
+        url: `http://localhost:3001/uploads/${file.filename}`,
+        mimeType: file.mimetype,
+        size: `${(file.size / 1024).toFixed(2)} KB`,
+      },
+    };
+  }
 }
+
+
