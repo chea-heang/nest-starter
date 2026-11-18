@@ -90,22 +90,5 @@
   },
   "prisma": {
     "seed": "ts-node -P tsconfig.seed.json prisma/seed.ts"
-  },
-  "pnpm": {
-    "overrides": {
-      "magic-string": "^0.30.17",
-      "ora": "^5.4.1"
-    },
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "@nestjs/common",
-        "@nestjs/core",
-        "keyv"
-      ],
-      "allowedVersions": {
-        "@nestjs/common": "12.x",
-        "@nestjs/core": "12.x"
-      }
-    }
   }
 }

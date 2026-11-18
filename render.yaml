@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: nest-starter-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pnpm install --frozen-lockfile && pnpm exec prisma generate && pnpm run build
+    startCommand: pnpm exec prisma db push --skip-generate && node dist/main.js
+    healthCheckPath: /api/v1
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: PNPM_VERSION
+        value: 12.21.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard with your MongoDB Atlas connection string
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: THROTTLE_TTL
+        value: 60
+      - key: THROTTLE_LIMIT
+        value: 100
+      - key: CACHE_DEFAULT_TTL
+        value: 60
+      - key: CACHE_MAX_ITEMS
+        value: 500
+      - key: LOG_LEVEL
+        value: info
