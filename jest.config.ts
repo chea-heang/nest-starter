@@ -16,19 +16,23 @@ const config: Config = {
   testRegex: '.*\\.spec\\.ts$',
   transform: {
     '^.+\\.(t|j)s$': [
-      require.resolve('ts-jest'),
+      'ts-jest',
       {
         tsconfig: {
-          rootDir: '.',
+          allowJs: true,
           module: 'commonjs',
           moduleResolution: 'node',
           resolvePackageJsonExports: false,
+          esModuleInterop: true,
           ignoreDeprecations: '6.0',
         },
       },
     ],
   },
-  transformIgnorePatterns: ['/node_modules/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!.*@nestjs)',
+  ],
+  modulePathIgnorePatterns: ['<rootDir>/.pnpm-store'],
   moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   collectCoverageFrom: [
     'src/**/*.(t|j)s',
