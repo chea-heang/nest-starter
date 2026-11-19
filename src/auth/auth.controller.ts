@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import {
   RegisterDto,
@@ -22,20 +23,14 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  /**
-   * Register a new user
-   * POST /api/v1/auth/register
-   */
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
-  /**
-   * Login — returns access_token + refresh_token + user
-   * POST /api/v1/auth/login
-   */
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
@@ -69,6 +64,7 @@ export class AuthController {
    * GET /api/v1/auth/profile
    * Header: Authorization: Bearer <access_token>
    */
+  @SkipThrottle()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req: any) {

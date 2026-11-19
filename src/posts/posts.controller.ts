@@ -10,7 +10,9 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -41,6 +43,8 @@ export class PostsController {
    * Get all public posts (supports pagination, search, published filter)
    * GET /api/v1/posts
    */
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000)
   @Get()
   findAll(@Query() query: QueryPostDto) {
     return this.postsService.findAll(query);
@@ -63,6 +67,8 @@ export class PostsController {
    * Get a single post by ID or Slug (with author and comments)
    * GET /api/v1/posts/:idOrSlug
    */
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120000)
   @Get(':idOrSlug')
   findOne(@Param('idOrSlug') idOrSlug: string) {
     return this.postsService.findOne(idOrSlug);
@@ -115,6 +121,8 @@ export class PostsController {
    * Get all comments for a specific post
    * GET /api/v1/posts/:id/comments
    */
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000)
   @Get(':id/comments')
   getComments(@Param('id') postId: string) {
     return this.postsService.getComments(postId);

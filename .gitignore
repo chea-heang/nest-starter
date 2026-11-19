@@ -1,6 +1,7 @@
 # compiled output
 /dist
 /node_modules
+.pnpm-store
 /build
 *.tsbuildinfo
 tsconfig.build.tsbuildinfo
@@ -16,6 +17,8 @@ lerna-debug.log*
 
 # OS
 .DS_Store
+*.backup
+prisma/migrations.backup
 
 # Tests
 /coverage

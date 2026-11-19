@@ -2,17 +2,22 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Inject,
   NotFoundException,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   // Helper accessor for Prisma models before/after schema generation
   private get db(): any {
@@ -46,7 +51,7 @@ export class PostsService {
       slug = `${slug}-${Date.now().toString().slice(-4)}`;
     }
 
-    return this.db.post.create({
+    const post = await this.db.post.create({
       data: {
         title: dto.title,
         slug,
@@ -64,6 +69,9 @@ export class PostsService {
         },
       },
     });
+
+    await this.cacheManager.clear();
+    return post;
   }
 
   /**
@@ -185,7 +193,7 @@ export class PostsService {
       }
     }
 
-    return this.db.post.update({
+    const updated = await this.db.post.update({
       where: { id: postId },
       data: {
         ...dto,
@@ -200,6 +208,9 @@ export class PostsService {
         },
       },
     });
+
+    await this.cacheManager.clear();
+    return updated;
   }
 
   /**
@@ -216,6 +227,7 @@ export class PostsService {
     }
 
     await this.db.post.delete({ where: { id: postId } });
+    await this.cacheManager.clear();
 
     return {
       message: `Post with ID ${postId} has been deleted successfully`,
@@ -232,7 +244,7 @@ export class PostsService {
       throw new NotFoundException(`Post with ID ${postId} not found`);
     }
 
-    return this.db.comment.create({
+    const comment = await this.db.comment.create({
       data: {
         content,
         postId,
@@ -244,6 +256,9 @@ export class PostsService {
         },
       },
     });
+
+    await this.cacheManager.clear();
+    return comment;
   }
 
   /**

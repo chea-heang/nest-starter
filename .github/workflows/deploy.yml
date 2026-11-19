@@ -1,0 +1,119 @@
+name: Continuous Deployment (CD) - Render
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Run CI Validation Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Code Quality & Lint Check
+        run: pnpm run lint
+
+      - name: Compile TypeScript & Build
+        run: pnpm run build
+
+      - name: Run Unit Tests
+        run: pnpm test
+
+  deploy-render:
+    name: Deploy to Render Web Service
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Check Render Configuration
+        id: check_config
+        shell: bash
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$HOOK_URL" ]; then
+            echo "has_hook=true" >> $GITHUB_OUTPUT
+            echo "✅ Render Deploy Hook is configured in repository secrets."
+          else
+            echo "has_hook=false" >> $GITHUB_OUTPUT
+            echo "::warning ::RENDER_DEPLOY_HOOK_URL secret is not set!"
+            echo "To enable automated deployments:"
+            echo "1. Go to your Render Dashboard (https://dashboard.render.com)."
+            echo "2. Open your Web Service -> Settings -> Deploy Hook."
+            echo "3. Copy the URL and add it in GitHub: Settings -> Secrets and variables -> Actions -> New repository secret -> RENDER_DEPLOY_HOOK_URL."
+          fi
+
+      - name: Trigger Render Deploy Hook
+        if: steps.check_config.outputs.has_hook == 'true'
+        shell: bash
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "🚀 Triggering Render deployment via Deploy Hook..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$HOOK_URL")
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response Body: $BODY"
+          echo "HTTP Status Code: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Render deployment successfully triggered! (HTTP $HTTP_STATUS)"
+          else
+            echo "❌ Failed to trigger Render deployment. HTTP Status: $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Verify API Health Check
+        if: steps.check_config.outputs.has_hook == 'true' && secrets.API_HEALTHCHECK_URL != ''
+        shell: bash
+        env:
+          HEALTH_URL: ${{ secrets.API_HEALTHCHECK_URL }}
+        run: |
+          echo "🔍 Polling health check at: $HEALTH_URL"
+          echo "Note: Render free services may take 30-60s to build and wake up from spin-down."
+          
+          # Retry for up to 3 minutes (18 attempts x 10s)
+          MAX_ATTEMPTS=18
+          DELAY=10
+          ATTEMPT=1
+
+          sleep 20 # Initial wait for Render to receive build request
+
+          until curl -f -s -o /dev/null "$HEALTH_URL"; do
+            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+              echo "⚠️ Health check reached timeout after $((MAX_ATTEMPTS * DELAY + 20)) seconds."
+              echo "The deployment is likely still building on Render. Check your Render Dashboard logs."
+              break
+            fi
+            echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS: Service not ready yet. Retrying in ${DELAY}s..."
+            ATTEMPT=$((ATTEMPT + 1))
+            sleep "$DELAY"
+          done
+
+          if curl -f -s "$HEALTH_URL" > /dev/null; then
+            echo "🎉 Deployment verified! API responded successfully to health check."
+          fi

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto, LoginDto, UpdateProfileDto } from './dto/auth.dto';
 import type { SafeUser, UserPayload, TokenPair } from './interfaces/user.interface';
@@ -18,6 +19,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   // ================================
@@ -44,7 +46,14 @@ export class AuthService {
       },
     });
 
-    // 4. Return without password
+    // 4. Send Welcome Email asynchronously (non-blocking)
+    this.mailService
+      .sendWelcomeEmail(user.email, user.name)
+      .catch(() => {
+        // Log or handle mail delivery failure silently without failing user registration
+      });
+
+    // 5. Return without password
     return this.toSafeUser(user);
   }
 
@@ -86,10 +95,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    // 2. Hash the incoming token to compare against stored hash
-    const hashedIncoming = await bcrypt.hash(rawRefreshToken, SALT_ROUNDS);
-
-    // Find all refresh tokens for this user and compare
+    // 2. Find all refresh tokens for this user and compare
     const storedTokens = await this.prisma.refreshToken.findMany({
       where: { userId: payload.sub, expiresAt: { gt: new Date() } },
     });

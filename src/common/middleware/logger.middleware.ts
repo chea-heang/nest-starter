@@ -12,6 +12,7 @@ export class LoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const { statusCode } = res;
       const duration = Date.now() - startTime;
+      const correlationId = (req.headers['x-correlation-id'] as string) ?? '-';
       const color =
         statusCode >= 500
           ? '🔴'
@@ -19,7 +20,7 @@ export class LoggerMiddleware implements NestMiddleware {
             ? '🟡'
             : '🟢';
       this.logger.log(
-        `${color} [${method}] ${originalUrl} → ${statusCode} (${duration}ms) [${ip}]`,
+        `${color} [${method}] ${originalUrl} → ${statusCode} (${duration}ms) [${ip}] [${correlationId}]`,
       );
     });
 

@@ -1,0 +1,74 @@
+name: nest-starter-prod
+
+networks:
+  prod-net:
+    driver: bridge
+
+volumes:
+  mongodb_prod_data:
+
+services:
+  # ─── Production MongoDB Service ──────────────────────────────────────────────
+  database:
+    image: mongo:7.0
+    container_name: nest_mongodb_prod
+    restart: always
+    networks:
+      - prod-net
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-rootpassword}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-nest_db_prod}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongodb_prod_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ─── NestJS API Container (GHCR Production Image) ───────────────────────────
+  nest-api:
+    image: ${APP_IMAGE:-ghcr.io/chea-heang/nest-starter:latest}
+    container_name: nest_api_prod
+    restart: always
+    networks:
+      - prod-net
+    depends_on:
+      database:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1024M
