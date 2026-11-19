@@ -53,6 +53,7 @@ jobs:
         shell: bash
         env:
           HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          HEALTH_URL: ${{ secrets.API_HEALTHCHECK_URL }}
         run: |
           if [ -n "$HOOK_URL" ]; then
             echo "has_hook=true" >> $GITHUB_OUTPUT
@@ -64,6 +65,14 @@ jobs:
             echo "1. Go to your Render Dashboard (https://dashboard.render.com)."
             echo "2. Open your Web Service -> Settings -> Deploy Hook."
             echo "3. Copy the URL and add it in GitHub: Settings -> Secrets and variables -> Actions -> New repository secret -> RENDER_DEPLOY_HOOK_URL."
+          fi
+
+          if [ -n "$HEALTH_URL" ]; then
+            echo "has_health=true" >> $GITHUB_OUTPUT
+            echo "✅ Health check URL configured."
+          else
+            echo "has_health=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Health check URL not configured."
           fi
 
       - name: Trigger Render Deploy Hook
@@ -88,7 +97,7 @@ jobs:
           fi
 
       - name: Verify API Health Check
-        if: steps.check_config.outputs.has_hook == 'true' && secrets.API_HEALTHCHECK_URL != ''
+        if: steps.check_config.outputs.has_hook == 'true' && steps.check_config.outputs.has_health == 'true'
         shell: bash
         env:
           HEALTH_URL: ${{ secrets.API_HEALTHCHECK_URL }}
